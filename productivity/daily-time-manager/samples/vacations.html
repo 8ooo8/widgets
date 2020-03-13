@@ -1,0 +1,143 @@
+<!-- version 0.0.0 -->
+
+<html>
+    <head>
+        <title>Daily Time Manager</title>
+        <script>
+            //MODIFY THIS OBJECT TO CHANGE THE DAILY TIME SPENDING
+            var tasks = { 
+                //SOME PERSONALLY PREFERRED TASKS TO BE ADDED BY YOU.
+                Hygiene:
+                    {Brush_Teeth_and_Wash_Face: 5, Shower: {Take_off_and_on_Clothes: 2, Shower: 15, Dry_Hair: 5}, Shave_Beard_off: 2, Trim_Nails: 5 / 5}, //Trim_Nails: 5 mins once every 5 days
+                Physiological_Needs: 
+                    {Sleep: 7*60, Meals: {Breakfast: 20, Lunch: 25, Dinner: {Cook: 15, Eat: 25, Wash: 5}}, Drink: 5, Fruit: 10, Pee: 5, Poo: 15}};
+        </script>
+        
+        <style>
+            .taskName { color: #2b2b2b; font-size: 14px; font-family: helvetica }
+            .time { color: #7d7d7d; font-size: 14px; font-family: helvetica }
+            .unit { font-size: 8px; font-family: helvetica }
+            ul { padding-left: 0px; margin-left: 0px; }
+            ul.indent { padding-left: 0px; margin-left: 30px; }
+            li.task {
+                margin: 0;
+                padding: 0px 0 0px 20px;
+                list-style: none;
+                background-image: url("../resrc/arrow.png");
+                background-repeat: no-repeat;
+                background-position: left center;
+                background-size: 14px;
+                white-space: nowrap;
+            }
+            .remainTimeTag { color: #2b2b2b; font-size: 20px; font-family: helvetica }
+            .remainTimeValue { color: #2b2b2b; font-size: 25px; font-family: helvetica }
+        </style>
+        <script>
+            $ = function (_id) { if (arguments.length == 0 || _id === document) return document; else return document.getElementById(_id); }
+            var taskFormatting = (task, ttlTime) => {
+                var underscoreToSpace = str => str.replace(/_/g, " ");
+
+                var hr = $(document).createElement("span");
+                hr.setAttribute("class", "time");
+                hr.textContent = `${Math.floor(ttlTime / 60)} `;
+                var hrUnit = $(document).createElement("span");
+                hrUnit.setAttribute("class", "time unit");
+                hrUnit.textContent = "hr(s)";
+                var min = $(document).createElement("span");
+                min.setAttribute("class", "time");
+                min.textContent = ` ${parseFloat(ttlTime % 60).toFixed(2)} `;
+                var minUnit = $(document).createElement("span");
+                minUnit.setAttribute("class", "time unit");
+                minUnit.textContent = "min(s) ";
+                var taskName = $(document).createElement("span");
+                taskName.setAttribute("class", "taskName");
+                taskName.textContent = underscoreToSpace(task);
+
+                var task = $(document).createElement("li");
+                task.setAttribute("class", "task");
+                task.appendChild(hr);
+                task.appendChild(hrUnit);
+                task.appendChild(min);
+                task.appendChild(minUnit);
+                task.appendChild(taskName);
+
+                return task;
+            };
+            var remainTimeBlockFormatting = remainTime => {
+                var tag = $(document).createElement("span");
+                tag.setAttribute("class", "remainTimeTag");
+                tag.textContent = "Remaining Time: ";
+                var hr = $(document).createElement("span");
+                hr.setAttribute("class", "remainTimeValue");
+                hr.textContent = remainTime >= 0 ? `${Math.floor(remainTime / 60)} ` : `${Math.ceil(remainTime / 60)} `;
+                var hrUnit = $(document).createElement("span");
+                hrUnit.setAttribute("class", "remainTimeValue unit");
+                hrUnit.textContent = "hr(s)";
+                var min = $(document).createElement("span");
+                min.setAttribute("class", "remainTimeValue");
+                min.textContent = ` ${parseFloat(remainTime % 60).toFixed(2)} `;
+                var minUnit = $(document).createElement("span");
+                minUnit.setAttribute("class", "remainTimeValue unit");
+                minUnit.textContent = "min(s) ";
+
+                var block = $(document).createElement("p");
+                block.appendChild(tag);
+                block.appendChild(hr);
+                block.appendChild(hrUnit);
+                block.appendChild(min);
+                block.appendChild(minUnit);
+                return block;
+            }
+            var appendTimeSpending = function (){
+                var ttlTime = 0;
+                var generateDoms = function (node, tasks){
+                    for (var task in tasks){
+                        var notAnArray = Object.keys(tasks[task]) == 0;
+                        if (!notAnArray){
+                            let ttlTimeWithoutThisTask = ttlTime;
+
+                            let subsubNode = $(document).createElement("ul");
+                            subsubNode.setAttribute("class", "indent");
+                            generateDoms(subsubNode, tasks[task]);
+                            let subNode = taskFormatting(task, ttlTime - ttlTimeWithoutThisTask);
+
+                            node.appendChild(subNode);
+                            node.appendChild(subsubNode);
+                        }else{
+                            ttlTime = ttlTime + tasks[task];
+                            let subNode = taskFormatting(task, tasks[task]);
+                            node.appendChild(subNode);
+                        }
+                    };
+                    return node;
+                }
+                this.appendChild(generateDoms($(document).createElement("ul"), tasks));
+            };
+            var appendRemainTime = function (){
+                var remainTime = 24 * 60;
+                var getTtlTime = tasks => {
+                    if (typeof tasks === "number")
+                        return tasks;
+                    else{
+                        var ttlTime = 0;
+                        for (var task in tasks){
+                            ttlTime += getTtlTime(tasks[task]);
+                        }
+                        return ttlTime;
+                    }
+                };
+                remainTime -= getTtlTime(tasks);
+
+                this.appendChild(remainTimeBlockFormatting(remainTime));
+            }
+            document.addEventListener("DOMContentLoaded", function(event) {
+                appendTimeSpending.call($("tasks"));
+                appendRemainTime.call($("remainTime"));
+            });
+        </script>
+    </head>
+    <body>
+        <div id="tasks"></div>
+        <div id="remainTime"></div>
+    </body>
+</html>
